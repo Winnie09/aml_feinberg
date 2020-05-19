@@ -23,14 +23,8 @@ d4 <- readRDS('/dcl02/hongkai/data/wzhou14/Andy_lab/AML_project/scRNA_process/SU
 cnt4 <- as.matrix(d4@assays$RNA@counts)
 cnt4 = cnt4[!duplicated(rownames(cnt4)), ]
 colnames(cnt4) <- paste0('SU462:',colnames(cnt4))
-d5 <- readRDS('/dcl02/hongkai/data/wzhou14/Andy_lab/AML_project/scRNA_process/SU204_scRNA_seurat.rds')
-cnt5 <- as.matrix(d5@assays$RNA@counts)
-cnt5 = cnt5[!duplicated(rownames(cnt5)), ]
-colnames(cnt5) <- paste0('SU204:',colnames(cnt5))
 intgene <- intersect(rownames(cnt3), rownames(cnt4))
-intgene <- intersect(intgene, rownames(cnt5))
 cnt_aml <- cbind(cnt3[intgene,], cnt4[intgene,])
-cnt_aml <- cbind(cnt_aml, cnt5[intgene,])
 
 intgene <- intersect(rownames(cnt), rownames(cnt_aml))
 cnt <- cbind(cnt[intgene,], cnt_aml[intgene,])
