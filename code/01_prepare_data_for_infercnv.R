@@ -15,6 +15,7 @@ colnames(cnt2) <- paste0('GMP:',colnames(cnt2))
 intgene <- intersect(rownames(cnt1), rownames(cnt2))
 cnt <- cbind(cnt1[intgene,], cnt2[intgene,])
 
+<<<<<<< HEAD
 ###########
 # ddir = '/users/whou/aml_feinberg/data/'
 ddir <- '/dcl02/hongkai/data/wzhou14/Andy_lab/AML_project/scRNA_process/'
