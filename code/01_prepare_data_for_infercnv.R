@@ -3,7 +3,7 @@ gtf <- fread('/dcl02/hongkai/data/whou/resource/gtf/grch38.gtf',data.table=F)  #
 gtf <- gtf[gtf[,3]=='gene',]
 gn <- sub('\";.*','',sub('.*; gene_name \"','',gtf[,9]))
 
-## prepare gene by cell expression matrix
+## prepare reference data: gene by cell count matrix
 d1 <- readRDS('/dcl02/hongkai/data/wzhou14/Andy_lab/AML_project/scRNA_process/CD34-1_scRNA_seurat.rds')
 cnt1 <- as.matrix(d1@assays$RNA@counts)
 cnt1 = cnt1[!duplicated(rownames(cnt1)), ]
@@ -15,31 +15,47 @@ colnames(cnt2) <- paste0('GMP:',colnames(cnt2))
 intgene <- intersect(rownames(cnt1), rownames(cnt2))
 cnt <- cbind(cnt1[intgene,], cnt2[intgene,])
 
-d3 <- readRDS('/dcl02/hongkai/data/wzhou14/Andy_lab/AML_project/scRNA_process/SU344_scRNA_seurat.rds')
-cnt3 <- as.matrix(d3@assays$RNA@counts)
-cnt3 = cnt3[!duplicated(rownames(cnt3)), ]
-colnames(cnt3) <- paste0('SU344:',colnames(cnt3))
-d4 <- readRDS('/dcl02/hongkai/data/wzhou14/Andy_lab/AML_project/scRNA_process/SU462_scRNA_seurat.rds')
-cnt4 <- as.matrix(d4@assays$RNA@counts)
-cnt4 = cnt4[!duplicated(rownames(cnt4)), ]
-colnames(cnt4) <- paste0('SU462:',colnames(cnt4))
-intgene <- intersect(rownames(cnt3), rownames(cnt4))
-cnt_aml <- cbind(cnt3[intgene,], cnt4[intgene,])
+###########
+# ddir = '/users/whou/aml_feinberg/data/'
+ddir <- '/dcl02/hongkai/data/wzhou14/Andy_lab/AML_project/scRNA_process/'
+af <- list.files(ddir)
+af = af[grepl('_seurat.rds', af)]
+af = af[af != 'AML_integrated_scRNA_seurat.rds']
+cntlist <- list()
 
+for (f in af){
+  s = sub('_.*','',f)
+  print(s)
+  d <- readRDS(paste0(ddir, f))@assays$RNA@counts
+  d <- as.matrix(d)
+  cnt = d[!duplicated(rownames(d)), ]
+  colnames(cnt) <- paste0(s,':', colnames(cnt))
+  print(str(cnt))
+  cntlist[[s]] <- cnt
+}
+
+
+intgene <- names(which(table(unlist(lapply(cntlist, rownames)))==length(cntlist)))
+
+cntlist <- lapply(cntlist, function(i) i[intgene, ])
+cnt_aml <- do.call(cbind, cntlist)
+
+############# not yet
 intgene <- intersect(rownames(cnt), rownames(cnt_aml))
-cnt <- cbind(cnt[intgene,], cnt_aml[intgene,])
+cnt_all <- cbind(cnt[intgene,], cnt_aml[intgene,])
 
 ## cell annotation file
-meta <- data.frame(cell = colnames(cnt), sample = sub(':.*','', colnames(cnt)), stringsAsFactors = F)
+meta <- data.frame(cell = colnames(cnt_all), sample = sub(':.*','', colnames(cnt_all)), stringsAsFactors = F)
 write.table(meta,file='/users/whou/aml_feinberg/infercnv/meta.txt',quote=F,sep='\t',col.names=F,row.names=F)
 
 ## gene annotation file
-gr <- data.frame(gene = row.names(cnt),gtf[match(row.names(cnt),gn),c(1,4,5)],stringsAsFactors = F)
+gr <- data.frame(gene = row.names(cnt_all),gtf[match(row.names(cnt_all),gn),c(1,4,5)],stringsAsFactors = F)
 colnames(gr) = c('gene','chr','start','end')
 gr <- gr[!is.na(gr[,4]),]
 write.table(gr,file='/users/whou/aml_feinberg/infercnv/gr.txt',quote=F,sep='\t',col.names=F,row.names=F)
 
 ## write gene by cell expression matrix
-cnt <- cnt[gr[,1], ]
-write.table(cnt,file='/users/whou/aml_feinberg/infercnv/genematrix.txt',quote=F,sep='\t')
-
+cnt_all <- cnt_all[gr[,1], ]
+#write.table(cnt_all,file='/users/whou/aml_feinberg/infercnv/genematrix.txt',quote=F,sep='\t')
+df = as.data.frame(cnt_all, stringsAsFactors=F)
+fwrite(df, file = '/users/whou/aml_feinberg/infercnv/genematrix.txt', quote = F, sep = '\t', row.names = T)

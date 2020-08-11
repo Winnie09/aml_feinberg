@@ -1,6 +1,5 @@
 library(infercnv)
-#setwd('/users/whou/aml_feinberg/infercnv')
-setwd('/home-4/whou10@jhu.edu/scratch/Wenpin/aml_feinberg/infercnv')
+setwd('/users/whou/aml_feinberg/infercnv')
 infercnv_obj = CreateInfercnvObject(raw_counts_matrix='genematrix.txt',
                                     annotations_file='meta.txt',
                                     delim="\t",
